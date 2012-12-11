@@ -3,8 +3,8 @@
 function cta_menu(){
 	$items = array();
 
-	$items['admin/settings/cta'] = array(
-      'title' => 'cta',
+	$items['admin/structure/cta'] = array(
+      'title' => 'Call to Action Buttons',
       'description' => 'Configure the cta module.',
       'page callback' => 'drupal_get_form',
       'page arguments' => array('cta_admin_settings'),
