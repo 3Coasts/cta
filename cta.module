@@ -1,0 +1,137 @@
+<?php
+
+function cta_menu(){
+	$items = array();
+
+	$items['admin/settings/cta'] = array(
+      'title' => 'cta',
+      'description' => 'Configure the cta module.',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('cta_admin_settings'),
+      'access arguments' => array('administer site configuration'),
+	);
+
+	$items['admin/settings/cta/%/%/delete'] = array(
+	  'title' => 'cta',
+	  'page callback' => 'cta_delete_item',
+	  'page arguments' => array(3,4),
+	  'access arguments' => array('administer site configuration'),
+	);
+
+	return $items;
+}
+
+function cta_delete_item($token,$key){
+	$default_values = variable_get('cta', array());
+	unset($default_values[$token][$key]);
+	variable_set('cta',$default_values);
+	drupal_goto('admin/settings/cta');
+}
+
+function cta_admin_settings(){
+
+	$default_values = variable_get('cta', array());
+  	$form = array();
+
+	$table = array();
+	foreach($default_values as $token => $ctas){
+		foreach($ctas as $key => $cta){
+			$table[] = array($token,$cta[0],$cta[1],l('delete',"admin/settings/cta/$token/$key/delete"));
+		}
+	}
+
+	$variables = array(
+		'header' => array("Token","Path","Title","Delete"),
+		'rows' => $table,
+	);
+
+  	$form['info'] = array(
+		'#markup' => theme("table",$variables),
+	);
+
+
+	$form['token'] = array(
+		'#type' => 'textfield',
+		'#title' => "Token",
+		'#required' => TRUE
+	);
+
+	$form['path'] = array(
+	  '#type' => 'textfield',
+	  '#title' => t('Path'),
+	  '#required' => TRUE
+	);
+
+	$form['title'] = array(
+	  '#type' => 'textfield',
+	  '#title' => t('Title'),
+	  '#required' => TRUE
+	);
+
+  	$form['submit'] = array('#type' => 'submit', '#value' => t('Add'));
+
+  	return $form;
+
+}
+
+function cta_admin_settings_submit($form, &$form_state) {
+	$default_values = variable_get('cta', array());
+	$default_values[$form['token']['#value']][] = array($form['path']['#value'],$form['title']['#value']);
+	variable_set('cta',$default_values);
+}
+
+function cta_init(){
+	drupal_add_css(drupal_get_path('module', 'cta') . '/cta.css.less');
+}
+
+
+function cta_filter_info() {
+  $filters['cta'] = array(
+    'title' => t('Call To Action'),
+    'description' => t(''),
+    'prepare callback' => '_cta_filter_cta_prepare',
+    'process callback' => '_cta_filter_cta_process',
+    'tips callback' => '_cta_filter_cta_tips',
+  );
+  return $filters;
+}
+
+function _cta_filter_cta_prepare($text, $filter, $format, $langcode, $cache, $cache_id){
+	return $text;
+}
+
+function _cta_filter_cta_process($text, $filter, $format, $langcode, $cache, $cache_id){
+	preg_match_all('/\[cta\|([a-z-]+)\]/', $text, $matches);
+	$x = 0;
+	if(count($matches[0])){
+		while($x <= count($matches[0])-1){
+			$text = str_replace($matches[0][$x],cta_get_btns($matches[1][$x]),$text);
+			$x++;
+		}
+	}
+	return $text;
+}
+
+function _cta_filter_cta_tips($filter, $format, $long){
+	$videos = variable_get('cta', array());
+	$items = array();
+	foreach($videos as $token => $video){
+		$items[] = "[video|$token]";
+	}
+	$html = "<h2>Video Filter Tips</h2><p>Use the following to add videos to the site:</p>";
+	$html .= theme('item-list',$items);
+	return $html;
+}
+
+function cta_get_btns($match){
+
+	$ctas = variable_get('cta', array());
+	$items = array();
+	if(isset($ctas[$match])){
+		foreach($ctas[$match] as $cta){
+			$items[] = l($cta[1],$cta[0]);
+		}
+	}
+	return theme('item_list',array('items' => $items, 'attributes' => array('class' => 'cta')));
+
+}
