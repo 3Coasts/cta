@@ -11,7 +11,7 @@ function cta_menu(){
       'access arguments' => array('administer site configuration'),
 	);
 
-	$items['admin/settings/cta/%/%/delete'] = array(
+	$items['admin/structure/cta/%/%/delete'] = array(
 	  'title' => 'cta',
 	  'page callback' => 'cta_delete_item',
 	  'page arguments' => array(3,4),
@@ -25,7 +25,7 @@ function cta_delete_item($token,$key){
 	$default_values = variable_get('cta', array());
 	unset($default_values[$token][$key]);
 	variable_set('cta',$default_values);
-	drupal_goto('admin/settings/cta');
+	drupal_goto('admin/structure/cta');
 }
 
 function cta_admin_settings(){
@@ -36,7 +36,7 @@ function cta_admin_settings(){
 	$table = array();
 	foreach($default_values as $token => $ctas){
 		foreach($ctas as $key => $cta){
-			$table[] = array($token,$cta[0],$cta[1],l('delete',"admin/settings/cta/$token/$key/delete"));
+			$table[] = array($token,$cta[0],$cta[1],l('delete',"admin/structure/cta/$token/$key/delete"));
 		}
 	}
 
