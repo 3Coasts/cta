@@ -116,9 +116,9 @@ function _cta_filter_cta_tips($filter, $format, $long){
 	$videos = variable_get('cta', array());
 	$items = array();
 	foreach($videos as $token => $video){
-		$items[] = "[video|$token]";
+		$items[] = "[cta|$token]";
 	}
-	$html = "<h2>Video Filter Tips</h2><p>Use the following to add videos to the site:</p>";
+	$html = "<h2>Call To Action Filter Tips</h2><p>Use the following to add Calls-to-Action to the site:</p>";
 	$html .= theme('item-list',$items);
 	return $html;
 }
@@ -132,6 +132,6 @@ function cta_get_btns($match){
 			$items[] = l($cta[1],$cta[0]);
 		}
 	}
-	return theme('item_list',array('items' => $items, 'attributes' => array('class' => 'cta')));
+	return theme('item_list',array('items' => $items, 'attributes' => array('class' => 'cta clearfix')));
 
 }
