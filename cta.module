@@ -81,7 +81,7 @@ function cta_admin_settings_submit($form, &$form_state) {
 }
 
 function cta_init(){
-	drupal_add_css(drupal_get_path('module', 'cta') . '/cta.css.less');
+	drupal_add_css(drupal_get_path('module', 'cta') . '/cta.css');
 }
 
 
