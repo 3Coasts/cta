@@ -1,137 +1,168 @@
 <?php
 
+
+/**
+ * Implementatation of hook_menu().
+ */
 function cta_menu(){
-	$items = array();
+  $items = array();
 
-	$items['admin/structure/cta'] = array(
-      'title' => 'Call to Action Buttons',
-      'description' => 'Configure the cta module.',
-      'page callback' => 'drupal_get_form',
-      'page arguments' => array('cta_admin_settings'),
-      'access arguments' => array('administer site configuration'),
-	);
+  $items['admin/build/cta'] = array(
+    'title' => 'Call to Action Buttons',
+    'description' => 'Configure the cta module.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('cta_admin_settings'),
+    'access arguments' => array('administer site configuration'),
+  );
 
-	$items['admin/structure/cta/%/%/delete'] = array(
-	  'title' => 'cta',
-	  'page callback' => 'cta_delete_item',
-	  'page arguments' => array(3,4),
-	  'access arguments' => array('administer site configuration'),
-	);
+  $items['admin/structure/cta/%/%/delete'] = array(
+    'title' => 'cta',
+    'page callback' => 'cta_delete_item',
+    'page arguments' => array(3,4),
+    'access arguments' => array('administer site configuration'),
+  );
 
-	return $items;
-}
-
-function cta_delete_item($token,$key){
-	$default_values = variable_get('cta', array());
-	unset($default_values[$token][$key]);
-	variable_set('cta',$default_values);
-	drupal_goto('admin/structure/cta');
+  return $items;
 }
 
 function cta_admin_settings(){
 
-	$default_values = variable_get('cta', array());
-  	$form = array();
+  $default_values = variable_get('cta', array());
+    $form = array();
 
-	$table = array();
-	foreach($default_values as $token => $ctas){
-		foreach($ctas as $key => $cta){
-			$table[] = array($token,$cta[0],$cta[1],l('delete',"admin/structure/cta/$token/$key/delete"));
-		}
-	}
+  $table = array();
+  foreach($default_values as $token => $ctas){
+    foreach($ctas as $key => $cta){
+      $table[] = array($token,$cta[0],$cta[1],l('delete',"admin/structure/cta/$token/$key/delete"));
+    }
+  }
 
-	$variables = array(
-		'header' => array("Token","Path","Title","Delete"),
-		'rows' => $table,
-	);
+  $header = array("Token","Path","Title","Delete");
 
-  	$form['info'] = array(
-		'#markup' => theme("table",$variables),
-	);
+  $form['info'] = array(
+    '#value' => theme("table",$header,$table),
+  );
 
 
-	$form['token'] = array(
-		'#type' => 'textfield',
-		'#title' => "Token",
-		'#required' => TRUE
-	);
+  $form['token'] = array(
+    '#type' => 'textfield',
+    '#title' => "Token",
+    '#required' => TRUE
+  );
 
-	$form['path'] = array(
-	  '#type' => 'textfield',
-	  '#title' => t('Path'),
-	  '#required' => TRUE
-	);
+  $form['path'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Path'),
+    '#required' => TRUE
+  );
 
-	$form['title'] = array(
-	  '#type' => 'textfield',
-	  '#title' => t('Title'),
-	  '#required' => TRUE
-	);
+  $form['title'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Title'),
+    '#required' => TRUE
+  );
 
-  	$form['submit'] = array('#type' => 'submit', '#value' => t('Add'));
+    $form['submit'] = array('#type' => 'submit', '#value' => t('Add'));
 
-  	return $form;
+    return $form;
 
 }
 
 function cta_admin_settings_submit($form, &$form_state) {
-	$default_values = variable_get('cta', array());
-	$default_values[$form['token']['#value']][] = array($form['path']['#value'],$form['title']['#value']);
-	variable_set('cta',$default_values);
+  $default_values = variable_get('cta', array());
+  $default_values[$form['token']['#value']][] = array($form['path']['#value'],$form['title']['#value']);
+  variable_set('cta',$default_values);
 }
 
 function cta_init(){
-	drupal_add_css(drupal_get_path('module', 'cta') . '/cta.css.less');
+  drupal_add_css(drupal_get_path('module', 'cta') . '/cta.css');
 }
 
-
-function cta_filter_info() {
-  $filters['cta'] = array(
-    'title' => t('Call To Action'),
-    'description' => t(''),
-    'prepare callback' => '_cta_filter_cta_prepare',
-    'process callback' => '_cta_filter_cta_process',
-    'tips callback' => '_cta_filter_cta_tips',
-  );
-  return $filters;
+/**
+ * Implementation of hook_filter_tips().
+ *
+ * This hook allows filters to provide help text to users during the content
+ * editing process. Short tips are provided on the content editing screen, while
+ * long tips are provided on a separate linked page. Short tips are optional,
+ * but long tips are highly recommended.
+ */
+function cta_filter_tips($delta, $format, $long = FALSE) {
+  $videos = variable_get('cta', array());
+  $items = array();
+  foreach($videos as $token => $video){
+    $items[] = "[cta|$token]";
+  }
+  $html_short = "<h2>Call To Action Filter</h2><p>Use <strong>[cta|<em>token</em>]</strong> to add Calls-to-Action to content.</p>";
+  $html_long = "<h2>Call To Action Filter Tips</h2><p>Use the following to add Calls-to-Action to content:</p>";
+  $html_long .= theme('item-list',$items);
+  if ($long) {
+    return $html_long;
+  }
+  else {
+    return $html_short;
+  }
 }
 
-function _cta_filter_cta_prepare($text, $filter, $format, $langcode, $cache, $cache_id){
-	return $text;
-}
+/**
+ * Implementation of hook_filter().
+ *
+ * The bulk of filtering work is done here. This hook is quite complicated, so
+ * we'll discuss each operation it defines.
+ */
+function cta_filter($op, $delta = 0, $format = -1, $text = '') {
+  switch ($op) {
+    // The "list" operation provides the module an opportunity to declare both how
+    // many filters it defines and a human-readable name for each filter. Note that
+    // the returned name should be passed through t() for translation.
+    case 'list':
+      return array(
+        0 => t('Call to Action Buttons'));
 
-function _cta_filter_cta_process($text, $filter, $format, $langcode, $cache, $cache_id){
-	preg_match_all('/\[cta\|([a-z-]+)\]/', $text, $matches);
-	$x = 0;
-	if(count($matches[0])){
-		while($x <= count($matches[0])-1){
-			$text = str_replace($matches[0][$x],cta_get_btns($matches[1][$x]),$text);
-			$x++;
-		}
-	}
-	return $text;
-}
+    // This description is shown in the administrative interface, unlike the
+    // filter tips which are shown in the content editing interface.
+    case 'description':
+      return t('Use "[cta|token]" to add Calls-to-Action buttons to content.');
 
-function _cta_filter_cta_tips($filter, $format, $long){
-	$videos = variable_get('cta', array());
-	$items = array();
-	foreach($videos as $token => $video){
-		$items[] = "[cta|$token]";
-	}
-	$html = "<h2>Call To Action Filter Tips</h2><p>Use the following to add Calls-to-Action to the site:</p>";
-	$html .= theme('item-list',$items);
-	return $html;
+    // We don't need the "prepare" operation for this filter, but it's required
+    // to at least return the input text as-is.
+    case 'prepare':
+      return $text;
+
+    // The actual filtering is performed here. The supplied text should be
+    // returned, once any necessary substitutions have taken place.
+    case 'process':
+      preg_match_all('/\[cta\|([a-z-]+)\]/', $text, $matches);
+      $x = 0;
+      if(count($matches[0])){
+        while($x <= count($matches[0])-1){
+          $text = str_replace($matches[0][$x],cta_get_btns($matches[1][$x]),$text);
+          $x++;
+        }
+      }
+      return $text;
+
+  }
 }
 
 function cta_get_btns($match){
 
-	$ctas = variable_get('cta', array());
-	$items = array();
-	if(isset($ctas[$match])){
-		foreach($ctas[$match] as $cta){
-			$items[] = l($cta[1],$cta[0]);
-		}
-	}
-	return theme('item_list',array('items' => $items, 'attributes' => array('class' => 'cta clearfix')));
+  $ctas = variable_get('cta', array());
+  $items = array();
+  if(isset($ctas[$match])){
+    foreach($ctas[$match] as $cta){
+      $items[] = l($cta[1],$cta[0]);
+    }
+  }
+  $title = '';
+  $type = 'ul';
+  $attributes = array('class' => 'cta clearfix');
+  return theme('item_list',$items,$title,$type,$attributes);
 
+}
+
+function cta_delete_item($token,$key){
+  $default_values = variable_get('cta', array());
+  unset($default_values[$token][$key]);
+  variable_set('cta',$default_values);
+  drupal_goto('admin/build/cta');
 }
