@@ -1,13 +1,13 @@
 body ul.cta {
-  padding:0px;
-  margin:0px;
-  list-style:none inside none;
+  padding:0px !important;
+  margin:0px !important;
+  list-style:none inside none !important;
   background:none;
 }
 body ul.cta li {
   float:left;
   background:none;
-  list-style:none inside none;
+  list-style:none inside none !important;
   padding:0px;
   margin:0px;
 }
@@ -17,8 +17,8 @@ body ul.cta li a {
   box-shadow:inset -2px -3px 0px 0px #666;
   background:-webkit-gradient(linear,left top,left bottom,color-stop(0.05,#e5e5e5),color-stop(1,#ccc));
   background:-moz-linear-gradient(center top,#e5e5e5 5%,#ccc 100%);
-  filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='@gradienttop',endColorstr='@gradientbottom');
-  background-color:#e5e5e5;
+  filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#fff',endColorstr='#ccc');
+  backgrounde5e5e5color:#e5e5e5;
   -moz-border-radius:10px;
   -webkit-border-radius:10px;
   border-radius:10px;
@@ -26,7 +26,7 @@ body ul.cta li a {
   display:inline-block;
   color:#666;
   font-family:arial;
-  font-size:24px;
+  font-size:14px;
   font-weight:bold;
   padding:12px 30px;
   text-decoration:none;
@@ -37,8 +37,9 @@ body ul.cta li a {
 body ul.cta li a:hover {
   background:-webkit-gradient(linear,left top,left bottom,color-stop(0.05,#ccc),color-stop(1,#e5e5e5));
   background:-moz-linear-gradient(center top,#ccc 5%,#e5e5e5 100%);
-  filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='@gradientbottom',endColorstr='@gradienttop');
+  filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#ccc',endColorstr='#e5e5e5');
   background-color:#ccc;
+  text-decoration: none !important;
 }
 body ul.cta li a:active {
   position:relative;
