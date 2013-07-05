@@ -30,18 +30,37 @@ function cta_delete_item($token,$key){
 
 function cta_admin_settings(){
 
+	if ( module_exists('libraries') && ($library = libraries_detect('fontawesome')) && !empty($library['installed'])) {
+  	$hide_icons = FALSE;
+  	$version = $library['version'];
+	} else {
+		$hide_icons = TRUE;
+	}
+
 	$default_values = variable_get('cta', array());
   	$form = array();
 
 	$table = array();
 	foreach($default_values as $token => $ctas){
 		foreach($ctas as $key => $cta){
-			$table[] = array($token,$cta[0],$cta[1],l('delete',"admin/structure/cta/$token/$key/delete"));
+			if ($hide_icons) {
+				$table[] = array($token,$cta[0],$cta[1],l('delete',"admin/structure/cta/$token/$key/delete"));
+			} else {
+				$table[] = array($token,$cta[0],$cta[1],$cta[2],l('delete',"admin/structure/cta/$token/$key/delete"));
+			}
 		}
 	}
 
+	if ($hide_icons) {
+		$tb_header = array("Token","Path","Title","Delete");
+		$icon_message = '<em>' . t('FontAwesome Icons require the ' . l(t('libraries'),'https://drupal.org/project/libraries') . ' module and the ' . l(t('FontAwesome'),'https://drupal.org/project/fontawesome') . ' library.') . '</em>';
+	} else {
+		$tb_header = array("Token","Path","Title","Icon","Delete");
+		$icon_message = t('FontAwesome library detected. Version: ') . $version;
+	}
+
 	$variables = array(
-		'header' => array("Token","Path","Title","Delete"),
+		'header' => $tb_header,
 		'rows' => $table,
 	);
 
@@ -68,6 +87,15 @@ function cta_admin_settings(){
 	  '#required' => TRUE
 	);
 
+	$form['icon'] = array(
+		'#type' => 'textfield',
+		'#title' => t('FontAwesome Icon'),
+		'#required' => FALSE,
+		'#field_prefix' => t('icon-'),
+		'#description' => '<strong>' . t('Optional:') . '</strong> ' . t('Enter the icon name as seen on the ') . l(t('FontAwesome Cheatsheet'),'http://fortawesome.github.io/Font-Awesome/cheatsheet/') . '<br>' . $icon_message,
+		'#disabled' => $hide_icons
+	);
+
   	$form['submit'] = array('#type' => 'submit', '#value' => t('Add'));
 
   	return $form;
@@ -76,12 +104,12 @@ function cta_admin_settings(){
 
 function cta_admin_settings_submit($form, &$form_state) {
 	$default_values = variable_get('cta', array());
-	$default_values[$form['token']['#value']][] = array($form['path']['#value'],$form['title']['#value']);
+	$default_values[$form['token']['#value']][] = array($form['path']['#value'],$form['title']['#value'],$form['icon']['#value']);
 	variable_set('cta',$default_values);
 }
 
 function cta_init(){
-	drupal_add_css(drupal_get_path('module', 'cta') . '/cta.css');
+	drupal_add_css(drupal_get_path('module', 'cta') . '/cta.css.less');
 }
 
 
@@ -129,7 +157,21 @@ function cta_get_btns($match){
 	$items = array();
 	if(isset($ctas[$match])){
 		foreach($ctas[$match] as $cta){
-			$items[] = l($cta[1],$cta[0]);
+
+			//TODO: This part is not quite right.  Handle internal Drupal URL's vs external URL's better.
+			if (!url_is_external($cta[0])){
+				$path = drupal_get_normal_path($cta[0]);
+			} else {
+				$path = $cta[0];
+			}
+
+			if(strlen($cta[2]) > 0){
+				$icon = '<i class="icon-'.$cta[2].'"></i> ';
+			} else {
+				$icon = '';
+			}
+
+			$items[] = '<a href="'.$path.'">'.$icon.$cta[1].'</a>';
 		}
 	}
 	return theme('item_list',array('items' => $items, 'attributes' => array('class' => 'cta clearfix')));
