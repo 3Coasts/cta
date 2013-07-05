@@ -18,6 +18,13 @@ function cta_menu(){
 	  'access arguments' => array('administer site configuration'),
 	);
 
+	$items['admin/structure/cta/%/%/edit'] = array(
+	  'title' => 'cta',
+	  'page callback' => 'drupal_get_form',
+	  'page arguments' => array('cta_edit_settings',3,4),
+	  'access arguments' => array('administer site configuration'),
+	);
+
 	return $items;
 }
 
@@ -106,7 +113,6 @@ function cta_admin_settings(){
 	$form['weight'] = array(
 		'#type' => 'weight',
 		'#title' => t('Weight'),
-		// '#default_value' => $edit['weight']
 	);
 
 	$form['icon'] = array(
@@ -118,6 +124,11 @@ function cta_admin_settings(){
 		'#disabled' => $hide_icons
 	);
 
+	$form['ctaid'] = array(
+		'#type' = 'hidden',
+		'#value' = time(),
+		);
+
   	$form['submit'] = array('#type' => 'submit', '#value' => t('Add'));
 
   	return $form;
@@ -126,7 +137,7 @@ function cta_admin_settings(){
 
 function cta_admin_settings_submit($form, &$form_state) {
 	$default_values = variable_get('cta', array());
-	$default_values[$form['token']['#value']][] = array($form['path']['#value'],$form['title']['#value'],$form['weight']['#value'],$form['icon']['#value']);
+	$default_values[$form['token']['#value']][] = array($form['path']['#value'],$form['title']['#value'],$form['weight']['#value'],$form['icon']['#value'],$form['ctaid']['#value']);
 	variable_set('cta',$default_values);
 }
 
