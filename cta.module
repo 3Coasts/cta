@@ -43,40 +43,51 @@ function cta_admin_settings(){
 	uksort($default_values,"_cta_cmp");
   	$form = array();
 
-	$table = array();
-	foreach($default_values as $token => $ctas){
-		usort($ctas, "_cta_cmp_weight");
-		dsm($ctas);
-		foreach($ctas as $key => $cta){
-			if ($hide_icons) {
-				$table[] = array($token,$cta[0],$cta[1],$cta[2],l('delete',"admin/structure/cta/$token/$key/delete"));
-			} else {
-				$table[] = array($token,$cta[0],$cta[1],$cta[2],$cta[3],l('delete',"admin/structure/cta/$token/$key/delete"));
-			}
-		}
-	}
-
 	if ($hide_icons) {
-		$tb_header = array("Token","Path","Title","Weight","Delete");
+		$tb_header = array("Path","Title","Weight","Delete");
 		$icon_message = '<em>' . t('FontAwesome Icons require the ' . l(t('libraries'),'https://drupal.org/project/libraries',$options) . ' module and the ' . l(t('FontAwesome'),'https://drupal.org/project/fontawesome',$options) . ' library.') . '</em>';
 	} else {
-		$tb_header = array("Token","Path","Title","Weight","Icon","Delete");
+		$tb_header = array("Path","Title","Weight","Icon","Delete");
 		$icon_message = t('FontAwesome library detected. Version: ') . $version;
 	}
 
-	$variables = array(
-		'header' => $tb_header,
-		'rows' => $table,
-	);
+	foreach($default_values as $token => $ctas){
+		usort($ctas, "_cta_cmp_weight");
+		dsm($ctas);
+		$table = array();
+		foreach($ctas as $key => $cta){
+			$validated = _cta_validate_url($cta[0]);
+			if ($validated === LINK_INTERNAL){
+				$path = drupal_get_normal_path($cta[0]);
+			} elseif ($validated === LINK_FRONT) {
+				$path = "/";
+			} else {
+				$path = $cta[0];
+			}
+			if ($hide_icons) {
+				$table[] = array($path,$cta[1],$cta[2],l('delete',"admin/structure/cta/$token/$key/delete"));
+			} else {
+				$table[] = array($path,$cta[1],$cta[2],$cta[3],l('delete',"admin/structure/cta/$token/$key/delete"));
+			}
+		}
+		$variables = array(
+			'header' => $tb_header,
+			'rows' => $table,
+			'caption' => '<p>&nbsp;</p><h3><strong>Button Group: '. $token . '</strong><br>Use by inserting [cta|' . $token . '] into content.</h3>',
+		);
 
-  	$form['info'] = array(
-		'#markup' => theme("table",$variables),
-	);
+  	$form['info-' . $token] = array(
+			'#markup' => theme("table",$variables),
+		);
+	}
 
+	$form['spacer'] = array(
+		'#markup' => '<p>&nbsp;</p>',
+		);
 
 	$form['token'] = array(
 		'#type' => 'textfield',
-		'#title' => "Token",
+		'#title' => "Button Group",
 		'#required' => TRUE
 	);
 
@@ -169,10 +180,11 @@ function cta_get_btns($match){
 	if(isset($ctas[$match])){
 		usort($ctas[$match], "_cta_cmp_weight");
 		foreach($ctas[$match] as $cta){
-
-			//TODO: This part is not quite right.  Handle internal Drupal URL's vs external URL's better.
-			if (!url_is_external($cta[0])){
+			$validated = _cta_validate_url($cta[0]);
+			if ($validated === LINK_INTERNAL){
 				$path = drupal_get_normal_path($cta[0]);
+			} elseif ($validated === LINK_FRONT) {
+				$path = "/";
 			} else {
 				$path = $cta[0];
 			}
