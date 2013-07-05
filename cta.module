@@ -37,25 +37,30 @@ function cta_admin_settings(){
 		$hide_icons = TRUE;
 	}
 
+	$options = array('attributes'=>array('target'=>'_blank'));
+
 	$default_values = variable_get('cta', array());
+	uksort($default_values,"_cta_cmp");
   	$form = array();
 
 	$table = array();
 	foreach($default_values as $token => $ctas){
+		usort($ctas, "_cta_cmp_weight");
+		dsm($ctas);
 		foreach($ctas as $key => $cta){
 			if ($hide_icons) {
-				$table[] = array($token,$cta[0],$cta[1],l('delete',"admin/structure/cta/$token/$key/delete"));
-			} else {
 				$table[] = array($token,$cta[0],$cta[1],$cta[2],l('delete',"admin/structure/cta/$token/$key/delete"));
+			} else {
+				$table[] = array($token,$cta[0],$cta[1],$cta[2],$cta[3],l('delete',"admin/structure/cta/$token/$key/delete"));
 			}
 		}
 	}
 
 	if ($hide_icons) {
-		$tb_header = array("Token","Path","Title","Delete");
-		$icon_message = '<em>' . t('FontAwesome Icons require the ' . l(t('libraries'),'https://drupal.org/project/libraries') . ' module and the ' . l(t('FontAwesome'),'https://drupal.org/project/fontawesome') . ' library.') . '</em>';
+		$tb_header = array("Token","Path","Title","Weight","Delete");
+		$icon_message = '<em>' . t('FontAwesome Icons require the ' . l(t('libraries'),'https://drupal.org/project/libraries',$options) . ' module and the ' . l(t('FontAwesome'),'https://drupal.org/project/fontawesome',$options) . ' library.') . '</em>';
 	} else {
-		$tb_header = array("Token","Path","Title","Icon","Delete");
+		$tb_header = array("Token","Path","Title","Weight","Icon","Delete");
 		$icon_message = t('FontAwesome library detected. Version: ') . $version;
 	}
 
@@ -87,12 +92,18 @@ function cta_admin_settings(){
 	  '#required' => TRUE
 	);
 
+	$form['weight'] = array(
+		'#type' => 'weight',
+		'#title' => t('Weight'),
+		// '#default_value' => $edit['weight']
+	);
+
 	$form['icon'] = array(
 		'#type' => 'textfield',
 		'#title' => t('FontAwesome Icon'),
 		'#required' => FALSE,
 		'#field_prefix' => t('icon-'),
-		'#description' => '<strong>' . t('Optional:') . '</strong> ' . t('Enter the icon name as seen on the ') . l(t('FontAwesome Cheatsheet'),'http://fortawesome.github.io/Font-Awesome/cheatsheet/') . '<br>' . $icon_message,
+		'#description' => '<strong>' . t('Optional:') . '</strong> ' . t('Enter the icon name as seen on the ') . l(t('FontAwesome Cheatsheet'),'http://fortawesome.github.io/Font-Awesome/cheatsheet/',$options) . '<br>' . $icon_message,
 		'#disabled' => $hide_icons
 	);
 
@@ -104,12 +115,12 @@ function cta_admin_settings(){
 
 function cta_admin_settings_submit($form, &$form_state) {
 	$default_values = variable_get('cta', array());
-	$default_values[$form['token']['#value']][] = array($form['path']['#value'],$form['title']['#value'],$form['icon']['#value']);
+	$default_values[$form['token']['#value']][] = array($form['path']['#value'],$form['title']['#value'],$form['weight']['#value'],$form['icon']['#value']);
 	variable_set('cta',$default_values);
 }
 
 function cta_init(){
-	drupal_add_css(drupal_get_path('module', 'cta') . '/cta.css.less');
+	drupal_add_css(drupal_get_path('module', 'cta') . '/cta.css');
 }
 
 
@@ -156,6 +167,7 @@ function cta_get_btns($match){
 	$ctas = variable_get('cta', array());
 	$items = array();
 	if(isset($ctas[$match])){
+		usort($ctas[$match], "_cta_cmp_weight");
 		foreach($ctas[$match] as $cta){
 
 			//TODO: This part is not quite right.  Handle internal Drupal URL's vs external URL's better.
@@ -165,8 +177,8 @@ function cta_get_btns($match){
 				$path = $cta[0];
 			}
 
-			if(strlen($cta[2]) > 0){
-				$icon = '<i class="icon-'.$cta[2].'"></i> ';
+			if(strlen($cta[3]) > 0){
+				$icon = '<i class="icon-'.$cta[3].'"></i> ';
 			} else {
 				$icon = '';
 			}
@@ -176,4 +188,142 @@ function cta_get_btns($match){
 	}
 	return theme('item_list',array('items' => $items, 'attributes' => array('class' => 'cta clearfix')));
 
+}
+
+function _cta_cmp_weight($a, $b)
+{
+    return strcmp($a[2], $b[2]);
+}
+function _cta_cmp($a, $b)
+{
+    return strcmp($a, $b);
+}
+
+//Following borrowed from link module
+/**
+ * Validates a URL.
+ *
+ * Accepts all URLs following RFC 1738 standard for URL formation and all e-mail
+ * addresses following the RFC 2368 standard for mailto address formation.
+ *
+ * @param string $text
+ *
+ * @return mixed
+ *   Returns boolean FALSE if the URL is not valid. On success, returns one of
+ *   the LINK_(linktype) constants.
+ */
+function _cta_validate_url($text) {
+  // @TODO Complete letters.
+  $LINK_ICHARS_DOMAIN = (string) html_entity_decode(implode("", array(
+    "&#x00E6;", // æ
+    "&#x00C6;", // Æ
+    "&#x00C0;", // À
+    "&#x00E0;", // à
+    "&#x00C1;", // Á
+    "&#x00E1;", // á
+    "&#x00C2;", // Â
+    "&#x00E2;", // â
+    "&#x00E5;", // å
+    "&#x00C5;", // Å
+    "&#x00E4;", // ä
+    "&#x00C4;", // Ä
+    "&#x00C7;", // Ç
+    "&#x00E7;", // ç
+    "&#x00D0;", // Ð
+    "&#x00F0;", // ð
+    "&#x00C8;", // È
+    "&#x00E8;", // è
+    "&#x00C9;", // É
+    "&#x00E9;", // é
+    "&#x00CA;", // Ê
+    "&#x00EA;", // ê
+    "&#x00CB;", // Ë
+    "&#x00EB;", // ë
+    "&#x00CE;", // Î
+    "&#x00EE;", // î
+    "&#x00CF;", // Ï
+    "&#x00EF;", // ï
+    "&#x00F8;", // ø
+    "&#x00D8;", // Ø
+    "&#x00F6;", // ö
+    "&#x00D6;", // Ö
+    "&#x00D4;", // Ô
+    "&#x00F4;", // ô
+    "&#x00D5;", // Õ
+    "&#x00F5;", // õ
+    "&#x0152;", // Œ
+    "&#x0153;", // œ
+    "&#x00FC;", // ü
+    "&#x00DC;", // Ü
+    "&#x00D9;", // Ù
+    "&#x00F9;", // ù
+    "&#x00DB;", // Û
+    "&#x00FB;", // û
+    "&#x0178;", // Ÿ
+    "&#x00FF;", // ÿ
+    "&#x00D1;", // Ñ
+    "&#x00F1;", // ñ
+    "&#x00FE;", // þ
+    "&#x00DE;", // Þ
+    "&#x00FD;", // ý
+    "&#x00DD;", // Ý
+    "&#x00BF;", // ¿
+  )), ENT_QUOTES, 'UTF-8');
+
+  $LINK_ICHARS = $LINK_ICHARS_DOMAIN . (string) html_entity_decode(implode("", array(
+    "&#x00DF;", // ß
+  )), ENT_QUOTES, 'UTF-8');
+  $allowed_protocols = variable_get('filter_allowed_protocols', array('http', 'https', 'ftp', 'news', 'nntp', 'telnet', 'mailto', 'irc', 'ssh', 'sftp', 'webcal'));
+  $LINK_DOMAINS = _link_domains();
+
+  // Starting a parenthesis group with (?: means that it is grouped, but is not captured
+  $protocol = '((?:' . implode("|", $allowed_protocols) . '):\/\/)';
+  $authentication = "(?:(?:(?:[\w\.\-\+!$&'\(\)*\+,;=" . $LINK_ICHARS . "]|%[0-9a-f]{2})+(?::(?:[\w" . $LINK_ICHARS . "\.\-\+%!$&'\(\)*\+,;=]|%[0-9a-f]{2})*)?)?@)";
+  $domain = '(?:(?:[a-z0-9' . $LINK_ICHARS_DOMAIN . ']([a-z0-9' . $LINK_ICHARS_DOMAIN . '\-_\[\]])*)(\.(([a-z0-9' . $LINK_ICHARS_DOMAIN . '\-_\[\]])+\.)*(' . $LINK_DOMAINS . '|[a-z]{2}))?)';
+  $ipv4 = '(?:[0-9]{1,3}(\.[0-9]{1,3}){3})';
+  $ipv6 = '(?:[0-9a-fA-F]{1,4}(\:[0-9a-fA-F]{1,4}){7})';
+  $port = '(?::([0-9]{1,5}))';
+
+  // Pattern specific to external links.
+  $external_pattern = '/^' . $protocol . '?' . $authentication . '?(' . $domain . '|' . $ipv4 . '|' . $ipv6 . ' |localhost)' . $port . '?';
+
+  // Pattern specific to internal links.
+  $internal_pattern = "/^(?:[a-z0-9" . $LINK_ICHARS . "_\-+\[\] ]+)";
+  $internal_pattern_file = "/^(?:[a-z0-9" . $LINK_ICHARS . "_\-+\[\]\. \/\(\)][a-z0-9" . $LINK_ICHARS . "_\-+\[\]\. \(\)][a-z0-9" . $LINK_ICHARS . "_\-+\[\]\. \/\(\)]+)$/i";
+
+  $directories = "(?:\/[a-z0-9" . $LINK_ICHARS . "_\-\.~+%=&,$'#!():;*@\[\]]*)*";
+  // Yes, four backslashes == a single backslash.
+  $query = "(?:\/?\?([?a-z0-9" . $LINK_ICHARS . "+_|\-\.~\/\\\\%=&,$'():;*@\[\]{} ]*))";
+  $anchor = "(?:#[a-z0-9" . $LINK_ICHARS . "_\-\.~+%=&,$'():;*@\[\]\/\?]*)";
+
+  // The rest of the path for a standard URL.
+  $end = $directories . '?' . $query . '?' . $anchor . '?' . '$/i';
+
+  $message_id = '[^@].*@' . $domain;
+  $newsgroup_name = '(?:[0-9a-z+-]*\.)*[0-9a-z+-]*';
+  $news_pattern = '/^news:(' . $newsgroup_name . '|' . $message_id . ')$/i';
+
+  $user = '[a-zA-Z0-9' . $LINK_ICHARS . '_\-\.\+\^!#\$%&*+\/\=\?\`\|\{\}~\'\[\]]+';
+  $email_pattern = '/^mailto:' . $user . '@'.'(?:' . $domain . '|' . $ipv4 . '|' . $ipv6 . '|localhost)' . $query . '?$/';
+
+  if (strpos($text, '<front>') === 0) {
+    return LINK_FRONT;
+  }
+  if (in_array('mailto', $allowed_protocols) && preg_match($email_pattern, $text)) {
+    return LINK_EMAIL;
+  }
+  if (in_array('news', $allowed_protocols) && preg_match($news_pattern, $text)) {
+    return LINK_NEWS;
+  }
+  if (preg_match($internal_pattern . $end, $text)) {
+    return LINK_INTERNAL;
+  }
+  if (preg_match($external_pattern . $end, $text)) {
+    return LINK_EXTERNAL;
+  }
+  if (preg_match($internal_pattern_file, $text)) {
+    return LINK_INTERNAL;
+  }
+
+  return FALSE;
 }

@@ -17,6 +17,7 @@ body ul.cta li a {
   text-decoration: none !important;
   color: #ffffff;
   padding: 10px 20px;
+  margin: 0 20px 20px 0;
   background: #bfbfbf; /* Old browsers */
   background: -moz-linear-gradient(top,  #bfbfbf 0%, #808080 100%); /* FF3.6+ */
   background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#bfbfbf), color-stop(100%,#808080)); /* Chrome,Safari4+ */
