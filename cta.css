@@ -17,14 +17,15 @@ body ul.cta li a {
   text-decoration: none !important;
   color: #ffffff;
   padding: 10px 20px;
-  background: -moz-linear-gradient(
-    top,
-    #bfbfbf 0%,
-    #808080);
-  background: -webkit-gradient(
-    linear, left top, left bottom,
-    from(#bfbfbf),
-    to(#808080));
+  margin: 0 20px 20px 0;
+  background: #bfbfbf; /* Old browsers */
+  background: -moz-linear-gradient(top,  #bfbfbf 0%, #808080 100%); /* FF3.6+ */
+  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#bfbfbf), color-stop(100%,#808080)); /* Chrome,Safari4+ */
+  background: -webkit-linear-gradient(top,  #bfbfbf 0%,#808080 100%); /* Chrome10+,Safari5.1+ */
+  background: -o-linear-gradient(top,  #bfbfbf 0%,#808080 100%); /* Opera 11.10+ */
+  background: -ms-linear-gradient(top,  #bfbfbf 0%,#808080 100%); /* IE10+ */
+  background: linear-gradient(to bottom,  #bfbfbf 0%,#808080 100%); /* W3C */
+  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#bfbfbf', endColorstr='#808080',GradientType=0 ); /* IE6-9 */
   -moz-border-radius: 2px;
   -webkit-border-radius: 2px;
   border-radius: 2px;
@@ -40,14 +41,14 @@ body ul.cta li a {
     0px 1px 0px rgba(0,0,0,0.4);
 }
 body ul.cta li a:hover {
-  background: -moz-linear-gradient(
-    top,
-    #808080 0%,
-    #bfbfbf);
-  background: -webkit-gradient(
-    linear, left top, left bottom,
-    from(#808080),
-    to(#bfbfbf));
+  background: #808080; /* Old browsers */
+  background: -moz-linear-gradient(top,  #808080 0%, #bfbfbf 100%); /* FF3.6+ */
+  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#808080), color-stop(100%,#bfbfbf)); /* Chrome,Safari4+ */
+  background: -webkit-linear-gradient(top,  #808080 0%,#bfbfbf 100%); /* Chrome10+,Safari5.1+ */
+  background: -o-linear-gradient(top,  #808080 0%,#bfbfbf 100%); /* Opera 11.10+ */
+  background: -ms-linear-gradient(top,  #808080 0%,#bfbfbf 100%); /* IE10+ */
+  background: linear-gradient(to bottom,  #808080 0%,#bfbfbf 100%); /* W3C */
+  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#808080', endColorstr='#bfbfbf',GradientType=0 ); /* IE6-9 */
   text-decoration: none !important;
 }
 body ul.cta li a:active {
