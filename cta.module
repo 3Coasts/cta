@@ -37,6 +37,7 @@ function cta_delete_item($token,$key){
 		}
 	}
 	variable_set('cta',$default_values);
+	drupal_flush_all_caches();
 	drupal_goto('admin/structure/cta');
 }
 
@@ -66,31 +67,33 @@ function cta_admin_settings($form,$form_state,$edittoken = NULL,$editkey = NULL)
 	foreach($default_values as $token => $ctas){
 		usort($ctas, "_cta_cmp_weight");
 		$table = array();
+		dsm($ctas,"CTAs");
 		foreach($ctas as $key => $cta){
-			//dsm($cta);
-			$validated = _cta_validate_url($cta[0]);
+			dsm($cta,"CTA");
+			dsm($key,"KEY");
+			$validated = _cta_validate_url($cta['path']);
 			if ($validated === LINK_INTERNAL){
-				$path = drupal_get_normal_path($cta[0]);
+				$path = drupal_get_normal_path($cta['path']);
 			} elseif ($validated === LINK_FRONT) {
 				$path = "/";
 			} else {
-				$path = $cta[0];
+				$path = $cta['path'];
 			}
 			if ($hide_icons) {
-				$table[] = array($path,$cta[1],$cta[2],l('edit',"admin/structure/cta/$token/$key/edit"),l('delete',"admin/structure/cta/$token/$key/delete"));
+				$table[] = array($path,$cta['title'],$cta['weight'],l('edit',"admin/structure/cta/$token/$key/edit"),l('delete',"admin/structure/cta/$token/$key/delete"));
 			} else {
-				$table[] = array($path,$cta[1],$cta[2],$cta[3],l('edit',"admin/structure/cta/$token/$key/edit"),l('delete',"admin/structure/cta/$token/$key/delete"));
+				$table[] = array($path,$cta['title'],$cta['weight'],$cta['icon'],l('edit',"admin/structure/cta/$token/$key/edit"),l('delete',"admin/structure/cta/$token/$key/delete"));
 			}
 			if (($edittoken == $token) && ($editkey == $key)){
 				$ctavars['edit'] = TRUE;
 				$ctavars['token'] = $token;
-				$ctavars['path'] = $cta[0];
-				$ctavars['title'] = $cta[1];
-				$ctavars['weight'] = $cta[2];
-				$ctavars['icon'] = $cta[3];
+				$ctavars['path'] = $cta[path];
+				$ctavars['title'] = $cta['title'];
+				$ctavars['weight'] = $cta['weight'];
+				$ctavars['icon'] = $cta['icon'];
 				$ctavars['key'] = $key;
 			}
-			dsm(get_defined_vars());
+			//dsm(get_defined_vars());
 		}
 		$variables = array(
 			'header' => $tb_header,
@@ -171,13 +174,14 @@ function cta_admin_settings_validate($form, &$form_state) {
 
 function cta_admin_settings_submit($form, &$form_state) {
 	$default_values = variable_get('cta', array());
-	dsm(get_defined_vars());
+	//dsm(get_defined_vars());
 	if ($form_state['clicked_button']['#value'] !== 'Edit'){
-		$default_values[$form['token']['#value']][] = array($form['path']['#value'],$form['title']['#value'],$form['weight']['#value'],$form['icon']['#value']);
+		$default_values[$form['token']['#value']][time()] = array('path'=>$form['path']['#value'],'title'=>$form['title']['#value'],'weight'=>$form['weight']['#value'],'icon'=>$form['icon']['#value']);
 	} else {
-		$default_values[$form['token']['#value']][$form['key']['#value']] = array($form['path']['#value'],$form['title']['#value'],$form['weight']['#value'],$form['icon']['#value']);
+		$default_values[$form['token']['#value']][$form['key']['#value']] = array('path'=>$form['path']['#value'],'title'=>$form['title']['#value'],'weight'=>$form['weight']['#value'],'icon'=>$form['icon']['#value']);
 	}
 	variable_set('cta',$default_values);
+	drupal_flush_all_caches();
 	drupal_goto('admin/structure/cta');
 }
 
@@ -231,22 +235,22 @@ function cta_get_btns($match){
 	if(isset($ctas[$match])){
 		usort($ctas[$match], "_cta_cmp_weight");
 		foreach($ctas[$match] as $cta){
-			$validated = _cta_validate_url($cta[0]);
+			$validated = _cta_validate_url($cta['path']);
 			if ($validated === LINK_INTERNAL){
-				$path = drupal_get_normal_path($cta[0]);
+				$path = drupal_get_normal_path($cta['path']);
 			} elseif ($validated === LINK_FRONT) {
 				$path = "/";
 			} else {
-				$path = $cta[0];
+				$path = $cta['path'];
 			}
 
-			if(strlen($cta[3]) > 0){
-				$icon = '<i class="icon-'.$cta[3].'"></i> ';
+			if(strlen($cta['icon']) > 0){
+				$icon = '<i class="icon-'.$cta['icon'].'"></i> ';
 			} else {
 				$icon = '';
 			}
 
-			$items[] = '<a href="'.$path.'">'.$icon.$cta[1].'</a>';
+			$items[] = '<a href="'.$path.'">'.$icon.$cta['title'].'</a>';
 		}
 	}
 	return theme('item_list',array('items' => $items, 'attributes' => array('class' => 'cta clearfix')));
