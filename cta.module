@@ -46,8 +46,25 @@ function cta_admin_settings($form_state,$edittoken = NULL,$editkey = NULL){
         }
       }
     }
+    if ( file_exists(DRUPAL_ROOT . '/sites/all/libraries/fontawesome/less/icons.less') ){
+      $icon_list = TRUE;
+      $iconclasses=array();
+      $faless = file_get_contents(DRUPAL_ROOT . '/sites/all/libraries/fontawesome/less/icons.less');
+      preg_match_all('/\.icon-.*?:before\s*?\{\s*?content/',$faless,$matches);
+      foreach($matches[0] as $match) {
+          $match = explode(':',$match);
+          $icon_s = t(preg_replace('/^\.icon-/','',$match[0]));
+          $iconclasses[$icon_s] = $icon_s;
+      }
+      uksort($iconclasses, "_cta_cmp");
+      array_unshift($iconclasses, "none");
+
+    } else {
+      $icon_list = FALSE;
+    }
   } else {
     $hide_icons = TRUE;
+    $icon_list = FALSE;
   };
 
   $edit_state = FALSE;
@@ -75,18 +92,26 @@ function cta_admin_settings($form_state,$edittoken = NULL,$editkey = NULL){
     $table = array();
     foreach($ctas as $key => $cta){
       $validated = valid_url($cta['path']);
-      if ($validated === LINK_INTERNAL){
-        $path = drupal_get_normal_path($cta['path']);
-      } elseif ($validated === LINK_FRONT) {
+      $external =  menu_path_is_external($cta['path']);
+      if ($validated && $external){
+        $path = $cta['path'];
+      } elseif ($validated) {
+        $path = "/" . $cta['path'];
+      } elseif ($cta['path'] === '<front>') {
         $path = "/";
       } else {
-        $path = $cta['path'];
+        $path = '';
       }
 
       if ($hide_icons) {
         $table[] = array($path,$cta['title'],$cta['weight'],l('edit',"admin/structure/cta/$token/$key/edit"),l('delete',"admin/structure/cta/$token/$key/delete",array('attributes'=>array("class"=>"delete"))));
       } else {
-        $table[] = array($path,$cta['title'],$cta['weight'],$cta['icon'],l('edit',"admin/structure/cta/$token/$key/edit"),l('delete',"admin/structure/cta/$token/$key/delete",array('attributes'=>array("class"=>"delete"))));
+        if ($cta['icon'] === '0'){
+          $icon = "";
+        } else {
+          $icon = $cta['icon'];
+        }
+        $table[] = array($path,$cta['title'],$cta['weight'],$icon,l('edit',"admin/structure/cta/$token/$key/edit"),l('delete',"admin/structure/cta/$token/$key/delete",array('attributes'=>array("class"=>"delete"))));
       }
       if (($edittoken == $token) && ($editkey == $key)){
         $ctavars['edit'] = TRUE;
@@ -97,7 +122,7 @@ function cta_admin_settings($form_state,$edittoken = NULL,$editkey = NULL){
         $ctavars['icon'] = $cta['icon'];
         $ctavars['key'] = $key;
       }
-      // dsm(get_defined_vars());
+
     }
     if (!$edit_state){
       $form['info-' . $token] = array(
@@ -154,20 +179,35 @@ function cta_admin_settings($form_state,$edittoken = NULL,$editkey = NULL){
     '#title' => t('Weight'),
     '#default_value' => $ctavars['weight'],
   );
+  if ($icon_list){
+    $form['icon'] = array(
+      '#type' => 'select',
+      '#title' => t('FontAwesome Icon'),
+      '#options'=> $iconclasses,
+      '#multiple'=> FALSE,
+      '#required' => FALSE,
+      '#field_prefix' => t('icon-'),
+      '#description' => '<strong>' . t('Optional:') . '</strong> ' . t('Enter the icon name as seen on the ') . l(t('FontAwesome Cheatsheet'),'http://fortawesome.github.io/Font-Awesome/cheatsheet/',$options) . '<br>' . $icon_message,
+      '#disabled' => $hide_icons,
+      '#default_value' => $ctavars['icon'],
+    );
+  } else {
+    $form['icon'] = array(
+      '#type' => 'textfield',
+      '#title' => t('FontAwesome Icon'),
+      '#required' => FALSE,
+      '#field_prefix' => t('icon-'),
+      '#description' => '<strong>' . t('Optional:') . '</strong> ' . t('Enter the icon name as seen on the ') . l(t('FontAwesome Cheatsheet'),'http://fortawesome.github.io/Font-Awesome/cheatsheet/',$options) . '<br>' . $icon_message,
+      '#disabled' => $hide_icons,
+      '#default_value' => $ctavars['icon'],
+    );
+  }
 
-  $form['icon'] = array(
-    '#type' => 'textfield',
-    '#title' => t('FontAwesome Icon'),
-    '#required' => FALSE,
-    '#field_prefix' => t('icon-'),
-    '#description' => '<strong>' . t('Optional:') . '</strong> ' . t('Enter the icon name as seen on the ') . l(t('FontAwesome Cheatsheet'),'http://fortawesome.github.io/Font-Awesome/cheatsheet/',$options) . '<br>' . $icon_message,
-    '#disabled' => $hide_icons,
-    '#default_value' => $ctavars['icon'],
-  );
 
   if ($ctavars['edit']){
     $form['key'] = array('#type'=>'hidden','#value'=>$ctavars['key']);
     $form['submit'] = array('#type' => 'submit', '#value' => t('Edit'));
+
   } else {
     $form['submit'] = array('#type' => 'submit', '#value' => t('Add'));
   }
@@ -177,18 +217,26 @@ function cta_admin_settings($form_state,$edittoken = NULL,$editkey = NULL){
 }
 
 function cta_admin_settings_validate($form, &$form_state) {
-  $validated = valid_url($form_state['values']['path']);
+  $validated = preg_match('/^[a-zA-Z0-9-_]+$/', t($form_state['values']['token']));
+  if (!$validated){
+    form_set_error('token','Tokens may contain only letters, numbers, dashes and hyphens with no spaces or other special characters.  Please supply a valid token.');
+  }
+  $validated = (valid_url($form_state['values']['path']) || $form_state['values']['path'] === '<front>');
   if (!$validated) {
     form_set_error('path', 'Please supply a valid link.');
+  }
+  $validated = preg_match('/^[a-z-]+$/', t($form_state['values']['token']));
+  if (!$validated) {
+    form_set_error('icon', 'Icon names are all lowercase letters with dashes.  Please supply a valid icon name');
   }
 }
 
 function cta_admin_settings_submit($form, &$form_state) {
   $default_values = variable_get('cta', array());
   if ($form_state['clicked_button']['#value'] !== 'Edit'){
-    $default_values[$form['token']['#value']][time()] = array('path'=>$form['path']['#value'],'title'=>$form['title']['#value'],'weight'=>$form['weight']['#value'],'icon'=>$form['icon']['#value']);
+    $default_values[$form['token']['#value']][time()] = array('path'=>$form['path']['#value'],'title'=>t($form['title']['#value']),'weight'=>$form['weight']['#value'],'icon'=>t($form['icon']['#value']));
   } else {
-    $default_values[$form['token']['#value']][$form['key']['#value']] = array('path'=>$form['path']['#value'],'title'=>$form['title']['#value'],'weight'=>$form['weight']['#value'],'icon'=>$form['icon']['#value']);
+    $default_values[$form['token']['#value']][$form['key']['#value']] = array('path'=>$form['path']['#value'],'title'=>t($form['title']['#value']),'weight'=>$form['weight']['#value'],'icon'=>t($form['icon']['#value']));
   }
   variable_set('cta',$default_values);
   drupal_flush_all_caches();
@@ -281,15 +329,18 @@ function cta_get_btns($match){
     uasort($ctas[$match], "_cta_cmp_weight");
     foreach($ctas[$match] as $cta){
       $validated = valid_url($cta['path']);
-      if ($validated === LINK_INTERNAL){
-        $path = drupal_get_normal_path($cta['path']);
-      } elseif ($validated === LINK_FRONT) {
+      $external =  menu_path_is_external($cta['path']);
+      if ($validated && $external){
+        $path = $cta['path'];
+      } elseif ($validated) {
+        $path = "/" . $cta['path'];
+      } elseif ($cta['path'] === '<front>') {
         $path = "/";
       } else {
-        $path = $cta['path'];
+        $path = '';
       }
 
-      if(strlen($cta['icon']) > 0){
+      if((strlen($cta['icon']) > 0) && ($cta['icon'] !== "none") && ($cta['icon'] !== 0)){
         $icon = '<i class="icon-'.$cta['icon'].'"></i> ';
       } else {
         $icon = '';
