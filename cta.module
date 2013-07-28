@@ -351,7 +351,7 @@ function cta_get_btns($match){
   }
   $title = '';
   $type = 'ul';
-  $attributes = array('class' => 'cta clearfix');
+  $attributes = array('class' => 'cta clearfix ' . $match);
   return theme('item_list',$items,$title,$type,$attributes);
 
 }
