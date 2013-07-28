@@ -58,3 +58,8 @@ body ul.cta li a:active {
 body ul.cta li.last a {
   margin-right:0px;
 }
+#cta-admin-settings caption{
+    text-align: left;
+    font-size:13px;
+    padding-bottom: 10px;
+  }
