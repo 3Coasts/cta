@@ -65,6 +65,11 @@ function cta_admin_settings($form,$form_state,$edittoken = NULL,$editkey = NULL)
 		$icon_list = FALSE;
 	}
 
+	$edit_state = FALSE;
+  if ($edittoken && $editkey){
+    $edit_state = TRUE;
+  }
+
 	$options = array('attributes'=>array('target'=>'_blank'));
 	$ctavars = array('edit'=>FALSE,'token'=>'','path'=>'','title'=>'','weight'=>'0','icon'=>'');
 
@@ -121,7 +126,7 @@ function cta_admin_settings($form,$form_state,$edittoken = NULL,$editkey = NULL)
 			'rows' => $table,
 			'caption' => '<p>&nbsp;</p><h3><strong>Button Group: '. $token . '</strong><br>Use by inserting [cta|' . $token . '] into content.</h3>',
 		);
-		if (!$ctavars['edit']){
+		if (!$edit_state){
 	  	$form['info-' . $token] = array(
 				'#markup' => theme("table",$variables),
 			);
