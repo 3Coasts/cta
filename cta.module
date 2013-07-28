@@ -225,7 +225,7 @@ function cta_admin_settings_validate($form, &$form_state) {
   if (!$validated) {
     form_set_error('path', 'Please supply a valid link.');
   }
-  $validated = preg_match('/^[a-z-]+$/', t($form_state['values']['token']));
+  $validated = (preg_match('/^[a-z-]+$/', t($form_state['values']['icon']) || t($form_state['values']['icon']) === "0");
   if (!$validated) {
     form_set_error('icon', 'Icon names are all lowercase letters with dashes.  Please supply a valid icon name');
   }
