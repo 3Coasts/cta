@@ -104,7 +104,7 @@ function cta_admin_settings($form,$form_state,$edittoken = NULL,$editkey = NULL)
         } else {
           $icon = $cta['icon'];
         }
-        $table[] = array($path,$cta['title'],$cta['weight'],$cta['icon'],l('edit',"admin/structure/cta/$token/$key/edit"),l('delete',"admin/structure/cta/$token/$key/delete",array('attributes'=>array("class"=>array("delete")))));
+        $table[] = array($path,$cta['title'],$cta['weight'],$icon,l('edit',"admin/structure/cta/$token/$key/edit"),l('delete',"admin/structure/cta/$token/$key/delete",array('attributes'=>array("class"=>array("delete")))));
 			}
 			if (($edittoken == $token) && ($editkey == $key)){
 				$ctavars['edit'] = TRUE;
