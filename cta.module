@@ -152,7 +152,8 @@ function cta_admin_settings($form,$form_state,$edittoken = NULL,$editkey = NULL)
 	  '#type' => 'textfield',
 	  '#title' => t('Path'),
 	  '#required' => TRUE,
-		'#default_value' => $ctavars['path'],
+		'#maxlength' => 254,
+    '#default_value' => $ctavars['path'],
 	);
 
 	$form['title'] = array(
