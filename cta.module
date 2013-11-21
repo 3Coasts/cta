@@ -225,7 +225,7 @@ function cta_admin_settings_submit($form, &$form_state) {
 		$default_values[$form['token']['#value']][$form['key']['#value']] = array('path'=>$form['path']['#value'],'title'=>$form['title']['#value'],'weight'=>$form['weight']['#value'],'icon'=>$form['icon']['#value']);
 	}
 	variable_set('cta',$default_values);
-	drupal_flush_all_caches();
+	cache_clear_all();
 	drupal_goto('admin/structure/cta');
 }
 
